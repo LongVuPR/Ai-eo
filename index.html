@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#004e92">
+
+  <title>IELTS Speaking Examiner – App</title>
+  <style>
+    :root{
+      --bg1:#061a2b;        /* ocean night */
+      --bg2:#0a2f47;        /* deep teal */
+      --glass:rgba(255,255,255,0.08);
+      --stroke:rgba(255,255,255,.14);
+      --text:#e6f1ff;
+      --muted:#96b1c6;
+      --accent:#4fd1c5;     /* teal */
+      --accent2:#60a5fa;    /* blue */
+      --danger:#ff6b6b;
+      --ok:#34d399;
+      --warning:#fbbf24;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--text);
+      background: radial-gradient(1200px 700px at 10% -10%, #0e3a5a55, transparent),
+                  radial-gradient(1000px 700px at 110% 10%, #0b6aa255, transparent),
+                  linear-gradient(160deg,var(--bg1),var(--bg2));
+      background-attachment: fixed;}
+
+    /* App Shell */
+    header{
+      position:sticky;top:0;z-index:30;
+      backdrop-filter: blur(14px);
+      background:linear-gradient(180deg,rgba(8,24,39,.7),rgba(8,24,39,.3)) ;
+      border-bottom:1px solid var(--stroke);
+      padding:12px 16px; display:flex; align-items:center; gap:10px; justify-content:space-between;
+    }
+    header h1{font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
+    header .sub{font-size:12px;color:var(--muted)}
+
+    main{padding:16px;max-width:900px;margin:0 auto 80px}
+
+    .glass{background:var(--glass); border:1px solid var(--stroke); border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,.3)}
+    .card{padding:14px; margin:12px 0}
+
+    .row{display:grid; gap:12px}
+    @media(min-width:720px){ .row.two{grid-template-columns:1fr 1fr} }
+
+    label{font-size:12px;color:var(--muted);display:block;margin:8px 6px}
+    input, textarea, select{
+      width:100%; background:rgba(10,30,48,.6); color:var(--text);
+      border:1px solid var(--stroke); border-radius:14px; padding:12px; outline:none; font-size:15px;
+    }
+    textarea{min-height:100px; resize:vertical}
+
+    .controls{display:flex; gap:10px; flex-wrap:wrap}
+    button{appearance:none;border:0;cursor:pointer;border-radius:14px;padding:12px 14px;font-weight:700}
+    .btn{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--stroke)}
+    .primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#06121b}
+    .danger{background:#3a1111;color:#ffdede;border:1px solid #5c1a1a}
+    .ghost{background:transparent;border:1px dashed var(--stroke)}
+
+    .badge{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--stroke);color:var(--muted)}
+    .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--stroke)}
+
+    .qbox{font-size:18px;line-height:1.5}
+
+    .meter{height:8px;background:rgba(255,255,255,.06);border-radius:999px;overflow:hidden;border:1px solid var(--stroke)}
+    .meter>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+
+    audio{width:100%}
+
+    .scoregrid{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+    .score{font-weight:800}
+
+    /* Sticky bottom nav */
+    nav.appbar{position:fixed;bottom:0;left:0;right:0;z-index:40;display:flex;gap:10px;justify-content:center;padding:10px 14px}
+    .dock{backdrop-filter: blur(16px); background:linear-gradient(180deg,rgba(9,27,44,.6),rgba(9,27,44,.3)); border:1px solid var(--stroke); border-radius:18px; padding:8px; display:flex; gap:8px}
+    .dock button{background:transparent;border:1px solid var(--stroke);color:var(--text)}
+
+    /* Floating mic */
+    .fab{position:fixed;right:16px;bottom:90px;z-index:50}
+    .fab button{width:64px;height:64px;border-radius:50%;box-shadow:0 12px 36px rgba(0,0,0,.4);font-size:22px}
+
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header class="glass">
+    <div>
+      <h1>🌊 IELTS Speaking Examiner</h1>
+      <div class="sub">Phong cách app • nền xanh đại dương + blur • tối ưu di động</div>
+    </div>
+    <div class="pill">⏱️ <span id="timer">00:00</span></div>
+  </header>
+
+  <main>
+    <!-- Setup -->
+    <section id="setup" class="glass card">
+      <h2 style="margin:6px 6px 10px">1) Thiết lập & nhập đề</h2>
+      <div class="row two">
+        <div>
+          <label>Ngôn ngữ nhận dạng</label>
+          <select id="lang">
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+          </select>
+          <label>Thời lượng Part 2 (phút nói)</label>
+          <input id="p2mins" type="number" min="1" max="4" value="2" />
+          <label>Lưu cài đặt vào trình duyệt?</label>
+          <select id="persist"><option value="yes">Có</option><option value="no">Không</option></select>
+        </div>
+        <div>
+          <label>Tên thí sinh (tuỳ chọn)</label>
+          <input id="candidate" placeholder="Ví dụ: Nguyen Van A"/>
+          <label>Ngày thi</label>
+          <input id="testdate" type="date" />
+        </div>
+      </div>
+
+      <div class="row two" style="margin-top:8px">
+        <div>
+          <label>Part 1 – Nhập từng câu hỏi (mỗi dòng một câu)</label>
+          <textarea id="p1text" placeholder="Do you work or study?\nWhere do you live?\n..."></textarea>
+        </div>
+        <div>
+          <label>Part 3 – Nhập từng câu hỏi (mỗi dòng một câu)</label>
+          <textarea id="p3text" placeholder="How has technology changed reading?\nShould schools ...\n..."></textarea>
+        </div>
+      </div>
+
+      <div class="row two">
+        <div>
+          <label>Part 2 – Cue card (tiêu đề)</label>
+          <input id="p2title" placeholder="Describe a book you recently read"/>
+        </div>
+        <div>
+          <label>Part 2 – Gợi ý (mỗi dòng một ý)</label>
+          <textarea id="p2cues" placeholder="You should say:\n- what it is about\n- when you read it\n- why you chose it\n- and explain ..."></textarea>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:8px">
+        <button class="btn" id="loadSample">Tải ví dụ</button>
+        <button class="primary" id="startBtn">Bắt đầu phỏng vấn</button>
+      </div>
+      <div class="muted" style="margin-top:6px">Không gửi dữ liệu ra ngoài. Mọi nội dung lưu trong trình duyệt của bạn.</div>
+    </section>
+
+    <!-- Exam -->
+    <section id="exam" class="glass card" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="badge" id="stageBadge">Part 1</div>
+        <div class="pill">Câu <span id="qIdx">1</span>/<span id="qTotal">1</span></div>
+      </div>
+      <div class="qbox" id="questionText" style="margin-top:10px">—</div>
+      <div id="prep" class="muted" style="margin:8px 0 4px 0"></div>
+      <div class="meter" title="Âm lượng tương đối" style="margin:10px 0 4px">
+        <i id="vu"></i>
+      </div>
+      <div class="controls">
+        <button class="btn" id="recBtn">🎙️ Bắt đầu ghi</button>
+        <button class="danger" id="stopBtn" disabled>⏹️ Dừng</button>
+        <button class="btn" id="nextBtn" disabled>➡️ Câu tiếp</button>
+        <button class="ghost" id="repeatBtn" disabled>🔁 Ghi lại</button>
+      </div>
+      <div id="audioWrap" class="hide" style="margin-top:10px">
+        <audio id="player" controls></audio>
+        <div class="controls">
+          <button id="downloadBtn" class="btn">⬇️ Tải câu trả lời (.webm)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="results" class="glass card" style="display:none">
+      <h3 style="margin:6px 6px 10px">Kết quả & phản hồi (ước lượng)</h3>
+      <div class="row two">
+        <div>
+          <div class="scoregrid">
+            <div>Fluency & Coherence</div><div class="score" id="s_fluency">-</div>
+            <div>Lexical Resource</div><div class="score" id="s_lex">-</div>
+            <div>Grammatical Range & Accuracy</div><div class="score" id="s_gram">-</div>
+            <div>Pronunciation</div><div class="score" id="s_pron">-</div>
+            <div style="border-top:1px solid var(--stroke);margin-top:6px"></div><div style="border-top:1px solid var(--stroke);margin-top:6px"></div>
+            <div>Overall</div><div class="score" id="s_overall">-</div>
+          </div>
+        </div>
+        <div>
+          <label>Transcript (nếu trình duyệt hỗ trợ Web Speech)</label>
+          <textarea id="transcript" placeholder="Văn bản nhận dạng sẽ hiển thị ở đây."></textarea>
+          <small class="muted">Điểm chỉ ước lượng – không thay thế giám khảo thật.</small>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="exportBtn">📦 Xuất kết quả (.json)</button>
+        <button class="btn" id="resetBtn">🔄 Làm lại</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Floating mic (quick access) -->
+  <div class="fab"><button class="primary" id="fabMic" title="Bắt đầu/Dừng nhanh">🎙️</button></div>
+
+  <!-- Bottom appbar -->
+  <nav class="appbar">
+    <div class="dock glass">
+      <button class="btn" id="navSetup">⚙️ Thiết lập</button>
+      <button class="btn" id="navExam">🗣️ Phỏng vấn</button>
+      <button class="btn" id="navResults">📊 Kết quả</button>
+    </div>
+  </nav>
+
+  <script>
+  // ===== Helpers =====
+  const $ = (q)=>document.querySelector(q);
+  const fmt=(s)=>s.toString().padStart(2,'0');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  function show(id){ ['setup','exam','results'].forEach(x=>document.getElementById(x).style.display='none'); document.getElementById(id).style.display='block'; }
+  function saveLocal(key,value){ try{ if($('#persist').value==='yes'){ localStorage.setItem(key, JSON.stringify(value)); } }catch(e){} }
+  function loadLocal(key, def=null){ try{ const v=localStorage.getItem(key); return v? JSON.parse(v):def; }catch(e){ return def; } }
+
+  // ===== Exam state =====
+  const state={ stage:1, qIndex:0, questions:{p1:[], p2:[], p3:[]},
+    startTs:null, timerId:null, media:{rec:null, stream:null, chunks:[]},
+    vu:{ctx:null, analyser:null, data:null},
+  };
+
+  // ===== Timer =====
+  function startTimer(){ const t0=Date.now(); state.startTs=t0; $('#timer').textContent='00:00'; if(state.timerId) clearInterval(state.timerId);
+    state.timerId=setInterval(()=>{ const s=Math.floor((Date.now()-t0)/1000); $('#timer').textContent=`${fmt(Math.floor(s/60))}:${fmt(s%60)}`; },250); }
+  function stopTimer(){ clearInterval(state.timerId); state.timerId=null; }
+
+  // ===== VU meter =====
+  async function initVU(stream){ try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const src=ctx.createMediaStreamSource(stream); const an=ctx.createAnalyser(); an.fftSize=512; const data=new Uint8Array(an.frequencyBinCount); src.connect(an); state.vu={ctx,analyser:an,data}; }catch(e){} }
+  function tickVU(){ const el=$('#vu'); if(state.vu.analyser){ state.vu.analyser.getByteTimeDomainData(state.vu.data); let min=255,max=0; for(const v of state.vu.data){ if(v<min)min=v; if(v>max)max=v; } const amp=(max-min)/255; el.style.width=(Math.min(1,amp*3)*100)+'%'; } requestAnimationFrame(tickVU); }
+
+  // ===== Speech recognition =====
+  let speechRecHandle=null;
+  function transcribe(){ if(!SR) return null; const r=new SR(); r.lang=$('#lang').value||'en-US'; r.interimResults=true; r.continuous=true; let text=''; r.onresult=(e)=>{ let str=''; for(let i=e.resultIndex;i<e.results.length;i++){ str+=e.results[i][0].transcript; } text+=' '+str; $('#transcript').value=text.trim(); }; r.onerror=(e)=>console.warn('SR error',e); try{ r.start(); }catch(e){} return r; }
+
+  // ===== Recording =====
+  async function startRecording(){
+    $('#recBtn').disabled=true; $('#stopBtn').disabled=false; $('#repeatBtn').disabled=true; $('#nextBtn').disabled=true;
+    const stream= state.media.stream || await navigator.mediaDevices.getUserMedia({audio:true}); state.media.stream=stream;
+    await initVU(stream); tickVU();
+    const rec=new MediaRecorder(stream); state.media.rec=rec; state.media.chunks=[];
+    rec.ondataavailable=(e)=>{ if(e.data.size>0) state.media.chunks.push(e.data); };
+    rec.onstop=()=>{ const blob=new Blob(state.media.chunks,{type:'audio/webm'}); const url=URL.createObjectURL(blob); $('#player').src=url; $('#audioWrap').classList.remove('hide'); $('#repeatBtn').disabled=false; $('#nextBtn').disabled=false; $('#stopBtn').disabled=true; if(speechRecHandle){ try{ speechRecHandle.stop(); }catch(e){} } stopTimer(); gradeCurrent(); };
+    rec.start(); startTimer(); speechRecHandle=transcribe();
+  }
+  function stopRecording(){ if(state.media.rec && state.media.rec.state!=='inactive'){ state.media.rec.stop(); } }
+  function downloadCurrent(){ const a=document.createElement('a'); a.href=$('#player').src; a.download=`IELTS_P${state.stage}_Q${state.qIndex+1}.webm`; a.click(); }
+
+  // ===== Build questions =====
+  function buildQuestions(){
+    const p1=$('#p1text').value.trim().split(/\n+/).filter(Boolean);
+    const p3=$('#p3text').value.trim().split(/\n+/).filter(Boolean);
+    const p2=[{ cue: $('#p2title').value || 'Describe a memorable experience you had recently.', cues: ($('#p2cues').value||'You should say:\n- when it happened\n- who was involved\n- what happened\n- and explain why it was memorable').split(/\n+/) }];
+    state.questions={p1,p2,p3};
+    saveLocal('ielts_setup', { lang:$('#lang').value, p2mins:$('#p2mins').value, cand:$('#candidate').value, date:$('#testdate').value, p1:$('#p1text').value, p2t:$('#p2title').value, p2c:$('#p2cues').value, p3:$('#p3text').value });
+  }
+
+  // ===== Exam flow =====
+  function enterPart1(){ state.stage=1; state.qIndex=0; $('#stageBadge').textContent='Part 1'; $('#qTotal').textContent=state.questions.p1.length; nextQuestion(); }
+  function enterPart2(){ state.stage=2; state.qIndex=0; $('#stageBadge').textContent='Part 2'; const mins=parseInt($('#p2mins').value||'2',10); $('#qTotal').textContent=1; $('#qIdx').textContent=1; const item=state.questions.p2[0]; $('#questionText').innerHTML=`<b>${item.cue}</b><br><small class="muted">You have 1 minute to prepare. Then speak for ${mins} minute(s).</small><br><ul>${item.cues.map(x=>`<li>${x.replace(/^[-•]\s?/,'')}</li>`).join('')}</ul>`; $('#prep').textContent='⏳ Chuẩn bị: 60 giây'; show('exam'); let prep=60; const h=setInterval(()=>{ prep--; $('#prep').textContent=`⏳ Chuẩn bị: ${prep}s`; if(prep<=0){ clearInterval(h); $('#prep').textContent='🎙️ Bắt đầu nói!'; startRecording(); setTimeout(()=>{ stopRecording(); }, mins*60*1000); } },1000); }
+  function enterPart3(){ state.stage=3; state.qIndex=0; $('#stageBadge').textContent='Part 3'; $('#qTotal').textContent=state.questions.p3.length; nextQuestion(); }
+
+  function nextQuestion(){ show('exam'); const list = state.stage===1?state.questions.p1:state.questions.p3; if(state.qIndex>=list.length){ if(state.stage===1) return enterPart2(); if(state.stage===3){ show('results'); gradeCurrent(); return; } }
+    const q=list[state.qIndex]; $('#qIdx').textContent=state.qIndex+1; $('#questionText').textContent=q; $('#prep').textContent=''; $('#audioWrap').classList.add('hide'); $('#recBtn').disabled=false; $('#stopBtn').disabled=true; $('#nextBtn').disabled=true; $('#repeatBtn').disabled=true; }
+
+  function finishQuestion(){ state.qIndex++; if(state.stage===2){ enterPart3(); return; } nextQuestion(); }
+
+  // ===== Simple scoring from transcript =====
+  function tokenizeWords(t){ return (t||'').toLowerCase().replace(/[^a-z\s']/gi,' ').split(/\s+/).filter(Boolean); }
+  const fillers=new Set(['um','uh','erm','like','you know','hmm','ah','eh']);
+  const common1000=new Set('the,be,to,of,and,a,in,that,have,i,it,for,not,on,with,he,as,you,do,at,this,but,his,by,from,they,we,say,her,she,or,an,will,my,one,all,would,there,their,what,so,up,out,if,about,who,get,which,go,me'.split(','));
+  function scoreFromMetrics(m){ let flu=0; if(m.wpm>=150)flu=8; else if(m.wpm>=130)flu=7; else if(m.wpm>=110)flu=6; else if(m.wpm>=90)flu=5; else if(m.wpm>=70)flu=4; else flu=3; flu-=Math.min(2,Math.round(m.fillerPer100/5)); let lex=0; if(m.ttr>=0.6)lex=8; else if(m.ttr>=0.52)lex=7; else if(m.ttr>=0.45)lex=6; else if(m.ttr>=0.38)lex=5; else if(m.ttr>=0.3)lex=4; else lex=3; lex+=(m.rarePct>0.25)?1:0; lex=Math.min(9,lex); let gram=0; if(m.avgSentLen>=18)gram=7; else if(m.avgSentLen>=14)gram=6; else if(m.avgSentLen>=10)gram=5; else gram=4; gram+=Math.min(2,Math.floor(m.complexMarkers/2)); let pron=6; if(m.wpm>=140 && m.wpm<=170) pron=7; else if(m.wpm<80 || m.wpm>190) pron=5; const overall=(flu*0.3+lex*0.25+gram*0.25+pron*0.2).toFixed(1); return {flu,lex,gram,pron,overall}; }
+  function analyzeTranscript(t,durationSec){ const words=tokenizeWords(t); const n=words.length; const minutes=Math.max(1e-6,durationSec/60); const wpm=n/minutes; const uniq=new Set(words); const ttr=(uniq.size)/(n||1); const fillCount=words.filter(w=>fillers.has(w)).length; const fillerPer100=(fillCount/(n||1))*100; const sents=(t.match(/[.!?]/g)||[]).length||1; const avgSentLen=n/Math.max(1,sents); const complexMarkers=(t.match(/\b(although|though|however|moreover|therefore|because|which|that|whose|despite|whereas)\b/gi)||[]).length; const rare=words.filter(w=>!common1000.has(w)); const rarePct=(rare.length/(n||1)); return {n,wpm,ttr,fillerPer100,avgSentLen,complexMarkers,rarePct}; }
+  function gradeCurrent(){ const t=($('#transcript').value||'').trim(); const durSec=Math.max(1, Math.floor((Date.now()-state.startTs)/1000)); const m=analyzeTranscript(t,durSec); const s=scoreFromMetrics(m); $('#s_fluency').textContent=s.flu.toFixed(1); $('#s_lex').textContent=s.lex.toFixed(1); $('#s_gram').textContent=s.gram.toFixed(1); $('#s_pron').textContent=s.pron.toFixed(1); $('#s_overall').textContent=s.overall; return {metrics:m,scores:s,transcript:t}; }
+
+  // ===== Wiring =====
+  $('#loadSample').onclick=()=>{ $('#p1text').value='Do you work or study?\nWhere do you live?\nWhat do you usually do in your free time?\nDo you prefer mornings or evenings?\nDo you like reading? Why?'; $('#p2title').value='Describe a book you recently read'; $('#p2cues').value='You should say:\n- what it is about\n- when you read it\n- why you chose it\n- and explain what you learned from it'; $('#p3text').value='How has technology changed reading habits?\nDo you think children should read more fiction or non-fiction?\nWhat are the pros and cons of ebooks?\nHow can schools encourage students to read more?\nWill printed books disappear in the future?'; };
+
+  $('#startBtn').onclick=()=>{ buildQuestions(); if(!$('#testdate').value){ const d=new Date(); $('#testdate').value=d.toISOString().slice(0,10); } enterPart1(); };
+  $('#recBtn').onclick=startRecording; $('#stopBtn').onclick=()=>{ stopRecording(); $('#nextBtn').disabled=false; };
+  $('#repeatBtn').onclick=()=>{ $('#transcript').value=''; startRecording(); };
+  $('#nextBtn').onclick=finishQuestion; $('#downloadBtn').onclick=downloadCurrent;
+
+  $('#exportBtn').onclick=()=>{ const data={ candidate:$('#candidate').value||null, date:$('#testdate').value||new Date().toISOString().slice(0,10), lang:$('#lang').value, scores:{ fluency:$('#s_fluency').textContent, lexical:$('#s_lex').textContent, grammar:$('#s_gram').textContent, pronunciation:$('#s_pron').textContent, overall:$('#s_overall').textContent }, }; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})); a.download='IELTS_speaking_result.json'; a.click(); };
+  $('#resetBtn').onclick=()=>location.reload();
+
+  // Bottom nav
+  $('#navSetup').onclick=()=>show('setup'); $('#navExam').onclick=()=>show('exam'); $('#navResults').onclick=()=>show('results');
+  // Floating mic toggle
+  $('#fabMic').onclick=()=>{ if($('#stopBtn').disabled) startRecording(); else stopRecording(); };
+
+  // Auto-restore
+  (function(){ const saved=loadLocal('ielts_setup'); if(saved){ $('#lang').value=saved.lang||'en-US'; $('#p2mins').value=saved.p2mins||'2'; $('#candidate').value=saved.cand||''; $('#testdate').value=saved.date||''; $('#p1text').value=saved.p1||''; $('#p2title').value=saved.p2t||''; $('#p2cues').value=saved.p2c||''; $('#p3text').value=saved.p3||''; } })();
+
+  // Grade when audio loaded (if transcript already there)
+  $('#player').addEventListener('loadedmetadata', ()=>{ gradeCurrent(); });
+  </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(() => console.log('Service Worker registered'))
+    .catch(err => console.error('SW registration failed', err));
+}
+</script>
+
+</body>
+</html>
